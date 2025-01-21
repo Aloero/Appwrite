@@ -3,8 +3,8 @@ package messaging
 import (
 	"encoding/json"
 	"errors"
-	"github.com/appwrite/sdk-for-go/client"
-	"github.com/appwrite/sdk-for-go/models"
+	"github.com/Aloero/Appwrite/client"
+	"github.com/Aloero/Appwrite/models"
 	"strings"
 )
 

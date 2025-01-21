@@ -1,6 +1,7 @@
 module github.com/Aloero/Appwrite
 
 go 1.22.5
+
 require github.com/json-iterator/go v1.1.12
 
 require (

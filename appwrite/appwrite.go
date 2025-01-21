@@ -3,18 +3,18 @@ package appwrite
 import (
 	"time"
 
-	"github.com/appwrite/sdk-for-go/client"
-	"github.com/appwrite/sdk-for-go/account"
-	"github.com/appwrite/sdk-for-go/avatars"
-	"github.com/appwrite/sdk-for-go/databases"
-	"github.com/appwrite/sdk-for-go/functions"
-	"github.com/appwrite/sdk-for-go/graphql"
-	"github.com/appwrite/sdk-for-go/health"
-	"github.com/appwrite/sdk-for-go/locale"
-	"github.com/appwrite/sdk-for-go/messaging"
-	"github.com/appwrite/sdk-for-go/storage"
-	"github.com/appwrite/sdk-for-go/teams"
-	"github.com/appwrite/sdk-for-go/users"
+	"github.com/Aloero/Appwrite/client"
+	"github.com/Aloero/Appwrite/account"
+	"github.com/Aloero/Appwrite/avatars"
+	"github.com/Aloero/Appwrite/databases"
+	"github.com/Aloero/Appwrite/functions"
+	"github.com/Aloero/Appwrite/graphql"
+	"github.com/Aloero/Appwrite/health"
+	"github.com/Aloero/Appwrite/locale"
+	"github.com/Aloero/Appwrite/messaging"
+	"github.com/Aloero/Appwrite/storage"
+	"github.com/Aloero/Appwrite/teams"
+	"github.com/Aloero/Appwrite/users"
 )
 
 func NewAccount(clt client.Client) *account.Account {

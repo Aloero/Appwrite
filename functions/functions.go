@@ -3,9 +3,9 @@ package functions
 import (
 	"encoding/json"
 	"errors"
-	"github.com/appwrite/sdk-for-go/client"
-	"github.com/appwrite/sdk-for-go/models"
-	"github.com/appwrite/sdk-for-go/file"
+	"github.com/Aloero/Appwrite/client"
+	"github.com/Aloero/Appwrite/models"
+	"github.com/Aloero/Appwrite/file"
 	"strings"
 )
 

@@ -19,7 +19,7 @@ import (
 	"time"
 	"runtime"
 
-	"github.com/appwrite/sdk-for-go/file"
+	"github.com/Aloero/Appwrite/file"
 )
 
 const (

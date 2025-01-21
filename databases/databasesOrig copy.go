@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/appwrite/sdk-for-go/client"
-	"github.com/appwrite/sdk-for-go/models"
-	"github.com/appwrite/sdk-for-go/query"
+	"github.com/Aloero/Appwrite/client"
+	"github.com/Aloero/Appwrite/models"
+	"github.com/Aloero/Appwrite/query"
 
 	jsoniter "github.com/json-iterator/go"
 )
