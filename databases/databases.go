@@ -2343,13 +2343,28 @@ func (srv *Databases) WithListDocumentsQueries(v []string) ListDocumentsOption {
 
 // Models and Options (Assumed Structures)
 type DocumentFast struct {
-	// Define your document fields here
+	// Document ID.
+	Id string `json:"$id"`
+	// Collection ID.
+	CollectionId string `json:"$collectionId"`
+	// Database ID.
+	DatabaseId string `json:"$databaseId"`
+	// Document creation date in ISO 8601 format.
+	CreatedAt string `json:"$createdAt"`
+	// Document update date in ISO 8601 format.
+	UpdatedAt string `json:"$updatedAt"`
+	// Document permissions. [Learn more about
+	// permissions](https://appwrite.io/docs/permissions).
+	Permissions []string `json:"$permissions"`
+
+	// Used by Decode() method
+	data []byte
 }
 
 type DocumentListFast struct {
 	Total     int        `json:"total"`
-	Documents []DocumentFast `json:"documents"`
-	Data      []interface{} `json:"data"`
+	Documents []*DocumentFast `json:"documents"`
+	Data      []byte
 }
 
 type DatabasesFast struct {
