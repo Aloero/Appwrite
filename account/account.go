@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Account service
+// Account servic
 type Account struct {
 	client client.Client
 }
