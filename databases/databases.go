@@ -2361,6 +2361,19 @@ type DocumentFast struct {
 	data []byte
 }
 
+func (model *DocumentListFast) Decode(value interface{}) error {
+    if len(model.Data) <= 0 {
+        return errors.New("method Decode() cannot be used on nested struct")
+    }
+
+    err := json.Unmarshal(model.Data, value)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
 type DocumentListFast struct {
 	Total     int        `json:"total"`
 	Documents []*DocumentFast `json:"documents"`
