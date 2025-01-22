@@ -1,19 +1,22 @@
 package databases
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Aloero/Appwrite/client"
 	"github.com/Aloero/Appwrite/models"
-	// "github.com/Aloero/Appwrite/query"
+	"github.com/Aloero/Appwrite/query"
 
-	jsoniter "github.com/json-iterator/go"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
+
+	// jsoniter "github.com/json-iterator/go"
 )
 
 // Databases service
@@ -2341,32 +2344,38 @@ func (srv *Databases) WithListDocumentsQueries(v []string) ListDocumentsOption {
 	}
 }
 
-// Models and Options (Assumed Structures)
 type DocumentFast struct {
-	// Document ID.
-	Id string `json:"$id"`
-	// Collection ID.
-	CollectionId string `json:"$collectionId"`
-	// Database ID.
-	DatabaseId string `json:"$databaseId"`
-	// Document creation date in ISO 8601 format.
-	CreatedAt string `json:"$createdAt"`
-	// Document update date in ISO 8601 format.
-	UpdatedAt string `json:"$updatedAt"`
-	// Document permissions. [Learn more about
-	// permissions](https://appwrite.io/docs/permissions).
-	Permissions []string `json:"$permissions"`
+	ID        string                 `json:"$id"`
+	CreatedAt string                 `json:"$createdAt"`
+	UpdatedAt string                 `json:"$updatedAt"`
+	Permissions []string             `json:"$permissions"`
+	// Добавьте другие поля документа согласно вашей структуре
+	Data      []byte
+}
 
-	// Used by Decode() method
-	data []byte
+// DocumentList представляет список документов
+type DocumentListFast struct {
+	Total     int        `json:"total"`
+	Documents []DocumentFast `json:"documents"`
+	Data      []byte
 }
 
 func (model *DocumentListFast) Decode(value interface{}) error {
+	// var json = jsoniter.ConfigFastest
+
     if len(model.Data) <= 0 {
         return errors.New("method Decode() cannot be used on nested struct")
     }
 
-    err := json.Unmarshal(model.Data, value)
+	wrappedData := bytes.Buffer{}
+    wrappedData.WriteByte('[')
+    wrappedData.Write(model.Data)
+    wrappedData.WriteByte(']')
+
+    // Заменяем `}{` на `},{` для корректного формирования массива
+    jsonData := bytes.ReplaceAll(wrappedData.Bytes(), []byte("}{"), []byte("},{"))
+
+    err := json.Unmarshal(jsonData, value)
     if err != nil {
         return err
     }
@@ -2374,11 +2383,11 @@ func (model *DocumentListFast) Decode(value interface{}) error {
     return nil
 }
 
-type DocumentListFast struct {
-	Total     int        `json:"total"`
-	Documents []*DocumentFast `json:"documents"`
-	Data      []byte
-}
+// type DocumentListFast struct {
+// 	Total     int        `json:"total"`
+// 	Documents []*DocumentFast `json:"documents"`
+// 	Data      []byte
+// }
 
 type DatabasesFast struct {
 	Endpoint   string
@@ -2387,13 +2396,13 @@ type DatabasesFast struct {
 	HTTPClient *http.Client
 }
 
-func NewDatabasesFast(endpoint, projectID, apiKey string) *DatabasesFast {
+func NewDatabasesFast(endpoint, projectID, apiKey string, timeout time.Duration) *DatabasesFast {
 	return &DatabasesFast{
 		Endpoint:  endpoint,
 		ProjectID: projectID,
 		APIKey:    apiKey,
 		HTTPClient: &http.Client{
-			// Optimize Transport settings if necessary
+			Timeout: timeout,
 			Transport: &http.Transport{
 				MaxIdleConns:        100,
 				MaxIdleConnsPerHost: 100,
@@ -2404,24 +2413,29 @@ func NewDatabasesFast(endpoint, projectID, apiKey string) *DatabasesFast {
 
 // ListDocuments fetches documents with optimized performance
 func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries []string) (*DocumentListFast, error) {
-	const maxLimit = 800
+	const maxLimit = 5000
 	var offset = 0
 
 	baseURL := fmt.Sprintf("%s/databases/%s/collections/%s/documents", srv.Endpoint, databaseID, collectionID)
 
 	resultDocumentList := &DocumentListFast{}
 
-	// Use jsoniter for faster JSON unmarshalling
-	var json = jsoniter.ConfigFastest
 
 	for {
 		// Prepare query parameters
 		params := url.Values{}
-		for _, q := range queries {
-			params.Add("queries[]", q)
+
+		for _, queryStr := range queries {
+			params.Add("queries[]", queryStr)
 		}
-		params.Add("offset", fmt.Sprintf("%d", offset))
-		params.Add("limit", fmt.Sprintf("%d", maxLimit))
+		params.Add("queries[]", query.Limit(maxLimit))
+		params.Add("queries[]", query.Offset(offset))
+
+		// for _, q := range queries {
+		// 	params.Add("queries[]", q)
+		// }
+		// params.Add("offset", fmt.Sprintf("%d", offset))
+		// params.Add("limit", fmt.Sprintf("%d", maxLimit))
 
 		fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
 
@@ -2443,7 +2457,7 @@ func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries
 		}
 
 		// Ensure response body is closed
-		body, readErr := ioutil.ReadAll(resp.Body)
+		body, readErr := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		if readErr != nil {
 			return nil, fmt.Errorf("failed to read response body: %w", readErr)
@@ -2460,7 +2474,12 @@ func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries
 			return nil, fmt.Errorf("expected JSON response, got: %s", contentType)
 		}
 
+		// string_body := string(body)
+
+		// data_body := []byte(string_body)
+
 		// Parse JSON response
+		// fmt.Println("TYYYT", len(body))
 		var parsed DocumentListFast
 		if err := json.Unmarshal(body, &parsed); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
@@ -2469,8 +2488,8 @@ func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries
 		// Aggregate results
 		resultDocumentList.Total += parsed.Total
 		resultDocumentList.Documents = append(resultDocumentList.Documents, parsed.Documents...)
-		resultDocumentList.Data = append(resultDocumentList.Data, parsed.Data...)
-
+		resultDocumentList.Data = append(resultDocumentList.Data, body...)
+		
 		// Break if fewer documents than maxLimit are returned
 		if len(parsed.Documents) < maxLimit {
 			break
@@ -2479,7 +2498,6 @@ func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries
 		// Increment offset for next batch
 		offset += maxLimit
 	}
-
 	return resultDocumentList, nil
 }
 

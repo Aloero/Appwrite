@@ -2,7 +2,11 @@ module github.com/Aloero/Appwrite
 
 go 1.22.5
 
-require github.com/json-iterator/go v1.1.12
+require (
+	github.com/joho/godotenv v1.5.1
+	github.com/json-iterator/go v1.1.12
+	github.com/mitchellh/mapstructure v1.5.0
+)
 
 require (
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
