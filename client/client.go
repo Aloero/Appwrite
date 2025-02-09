@@ -24,7 +24,7 @@ import (
 
 const (
 	fileNameKey      = "file"
-	defaultTimeout   = 10 * time.Second
+	defaultTimeout   = 100 * time.Second
 	defaultChunkSize = 5 * 1024 * 1024
 )
 

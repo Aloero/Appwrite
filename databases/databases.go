@@ -2349,19 +2349,18 @@ type DocumentFast struct {
 	CreatedAt string                 `json:"$createdAt"`
 	UpdatedAt string                 `json:"$updatedAt"`
 	Permissions []string             `json:"$permissions"`
-	// Добавьте другие поля документа согласно вашей структуре
-	Data      []byte
+	DatabaseID string                `json:"$databaseId"`
+	CollectionID string              `json:"$collectionId"`
 }
 
 // DocumentList представляет список документов
 type DocumentListFast struct {
 	Total     int        `json:"total"`
-	Documents []DocumentFast `json:"documents"`
+	// Documents []DocumentFast `json:"documents"`
 	Data      []byte
 }
 
-func (model *DocumentListFast) Decode(value interface{}) error {
-	// var json = jsoniter.ConfigFastest
+func (model *DataDocuments) Decode(value interface{}) error {
 
     if len(model.Data) <= 0 {
         return errors.New("method Decode() cannot be used on nested struct")
@@ -2383,17 +2382,25 @@ func (model *DocumentListFast) Decode(value interface{}) error {
     return nil
 }
 
-// type DocumentListFast struct {
-// 	Total     int        `json:"total"`
-// 	Documents []*DocumentFast `json:"documents"`
-// 	Data      []byte
-// }
-
 type DatabasesFast struct {
 	Endpoint   string
 	ProjectID  string
 	APIKey     string
 	HTTPClient *http.Client
+}
+
+type DocumentDescribe struct {
+	ID string `json:"$id"`
+	CreatedAt string `json:"$createdAt"`
+	UpdatedAt string `json:"$updatedAt"`
+	Permissions []interface{} `json:"$permissions"`
+	DatabaseId string `json:"$databaseId"`
+	CollectionId string `json:"$collectionId"`
+}
+
+type DocumentUnpack struct {
+	Total int64 `json:"total"`
+	Documents json.RawMessage `json:"documents"`
 }
 
 func NewDatabasesFast(endpoint, projectID, apiKey string, timeout time.Duration) *DatabasesFast {
@@ -2411,15 +2418,20 @@ func NewDatabasesFast(endpoint, projectID, apiKey string, timeout time.Duration)
 	}
 }
 
+type DataDocuments struct {
+	Total int64
+	Data []byte
+}
+
 // ListDocuments fetches documents with optimized performance
-func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries []string) (*DocumentListFast, error) {
+func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries []string) (*DataDocuments, error) {
 	const maxLimit = 5000
 	var offset = 0
+	var total int64
 
 	baseURL := fmt.Sprintf("%s/databases/%s/collections/%s/documents", srv.Endpoint, databaseID, collectionID)
 
-	resultDocumentList := &DocumentListFast{}
-
+	var resultDocuments []byte
 
 	for {
 		// Prepare query parameters
@@ -2430,12 +2442,6 @@ func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries
 		}
 		params.Add("queries[]", query.Limit(maxLimit))
 		params.Add("queries[]", query.Offset(offset))
-
-		// for _, q := range queries {
-		// 	params.Add("queries[]", q)
-		// }
-		// params.Add("offset", fmt.Sprintf("%d", offset))
-		// params.Add("limit", fmt.Sprintf("%d", maxLimit))
 
 		fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
 
@@ -2474,21 +2480,16 @@ func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries
 			return nil, fmt.Errorf("expected JSON response, got: %s", contentType)
 		}
 
-		// string_body := string(body)
-
-		// data_body := []byte(string_body)
-
-		// Parse JSON response
-		// fmt.Println("TYYYT", len(body))
-		var parsed DocumentListFast
+		var parsed DocumentUnpack
 		if err := json.Unmarshal(body, &parsed); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 		}
 
-		// Aggregate results
-		resultDocumentList.Total += parsed.Total
-		resultDocumentList.Documents = append(resultDocumentList.Documents, parsed.Documents...)
-		resultDocumentList.Data = append(resultDocumentList.Data, body...)
+		total += parsed.Total
+
+		if !(len(parsed.Documents) == 2) {
+			resultDocuments = append(resultDocuments, sliseEndsStr(parsed.Documents)...)
+		}
 		
 		// Break if fewer documents than maxLimit are returned
 		if len(parsed.Documents) < maxLimit {
@@ -2498,7 +2499,11 @@ func (srv *DatabasesFast) ListDocuments(databaseID, collectionID string, queries
 		// Increment offset for next batch
 		offset += maxLimit
 	}
-	return resultDocumentList, nil
+	return &DataDocuments{Total: total, Data: resultDocuments}, nil
+}
+
+func sliseEndsStr(s []byte) []byte {
+	return s[1 : len(s)-1]
 }
 
 // // Example usage
